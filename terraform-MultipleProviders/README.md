@@ -1,104 +1,79 @@
 ---
-title: Terraform Command Basics
-description: Learn Terraform Commands like init, validate, plan, apply and destroy
+title: Terraform Multiple Provider Blocks on Azure Cloud
+description: Learn how to use multiple Terraform provider blocks on Azure Cloud
 ---
 
+# Multiple Provider Configurations
+
 ## Step-01: Introduction
-- Understand basic Terraform Commands
-1. terraform init
-2. terraform validate
-3. terraform plan
-4. terraform apply
-5. terraform destroy      
+- Understand and Implement Multiple Provider Configurations
 
-[![Image](https://stacksimplify.com/course-images/azure-terraform-workflow-1.png "HashiCorp Certified: Terraform Associate on Azure")](https://stacksimplify.com/course-images/azure-terraform-workflow-1.png)
-
-[![Image](https://stacksimplify.com/course-images/azure-terraform-workflow-2.png "HashiCorp Certified: Terraform Associate on Azure")](https://stacksimplify.com/course-images/azure-terraform-workflow-2.png)
-
-## Step-02: Review terraform manifests
-- **Pre-Conditions-1:** Get Azure Regions and decide the region where you want to create resources
+## Step-02: How to define multiple provider configuration of same Provider?
+- Understand about default provider
+- Understand and define multiple provider configurations of same provider
 ```t
-# Get Azure Regions
-az account list-locations -o table
-```
-- **Pre-Conditions-2:** If not done earlier, complete `az login` via Azure CLI. We are going to use Azure CLI Authentication for Terraform when we use Terraform Commands. 
-```t
-# Azure CLI Login
-az login
-
-# List Subscriptions
-az account list
-
-# Set Specific Subscription (if we have multiple subscriptions)
-az account set --subscription="SUBSCRIPTION_ID"
-```
-- [Azure Regions](https://docs.microsoft.com/en-us/azure/virtual-machines/regions)
-- [Azure Regions Detailed](https://docs.microsoft.com/en-us/azure/best-practices-availability-paired-regions#what-are-paired-regions)
-```t
-# Terraform Settings Block
-terraform {
-  required_version = ">= 1.0.0"
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = ">= 2.0" # Optional but recommended in production
-    }    
-  }
-}
-# Configure the Microsoft Azure Provider
+# Provider-1 for EastUS (Default Provider)
 provider "azurerm" {
   features {}
 }
-# Create Resource Group 
-resource "azurerm_resource_group" "my_demo_rg1" {
-  location = "eastus"
-  name = "my-demo-rg1"  
+
+# Provider-2 for WestUS Region
+provider "azurerm" {
+  features {
+    virtual_machine {
+      delete_os_disk_on_deletion = false # This will ensure when the Virtual Machine is destroyed, Disk is not deleted, default is true and we can alter it at provider level
+    }
+  }
+  alias = "provider2-westus"
+  #client_id = "XXXX"
+  #client_secret = "YYY"
+  #environment = "german"
+  #subscription_id = "JJJJ"
 }
 ```
 
-## Step-03: Terraform Core Commands
+## Step-03: How to reference the non-default provider configuration in a resource?
 ```t
-# Terraform Initialize
-terraform init
-
-# Terraform Validate
-terraform validate
-
-# Terraform Plan to Verify what it is going to create / update / destroy
-terraform plan
-
-# Terraform Apply to Create Resources
-terraform apply 
+# Provider-2: Create a resource group in WestUS region - Uses "provider2-westus" provider
+resource "azurerm_resource_group" "myrg2" {
+  name = "myrg-2"
+  location = "West US"
+    #<PROVIDER NAME>.<ALIAS NAME>
+  provider = azurerm.provider2-westus
+}
 ```
 
-## Step-04: Verify Azure Resource Group in Azure Management Console
-- Go to Azure Management Console -> Resource Groups 
-- Verify newly created Resource Group
-- Review `terraform.tfstate` file 
-
-## Step-05: Destroy Infrastructure
+## Step-04: Execute Terraform Commands
 ```t
-# Destroy Azure Resource Group 
-terraform destroy
-Observation:
-1. Verify if the resource group got deleted in Azure Management Console
-2. Verify terraform.tfstate file and resource group info should be removed
-3. Verify terraform.tfstate.backup, it should have the resource group info here stored as backup. 
+# Initialize Terraform
+terraform init
 
-# Delete Terraform files 
+# Validate Terraform Configuration Files
+terraform validate
+
+# Generate Terraform Plan
+terraform plan
+
+# Create Resources
+terraform apply -auto-approve
+
+# Verify the same
+1. Verify the Resource Group created in EastUS region
+2. Verify the Resource Group created in WestUS region
+```
+
+## Step-05: Clean-Up 
+```t
+# Destroy Terraform Resources
+terraform destroy -auto-approve
+
+# Delete Terraform Files
 rm -rf .terraform*
 rm -rf terraform.tfstate*
 ```
 
-## Step-08: Conclusion
-- Re-iterate what we have learned in this section
-- Learned about Important Terraform Commands
-1. terraform init
-2. terraform validate
-3. terraform plan
-4. terraform apply
-5. terraform destroy      
- 
 
 
-
+## References
+- [Provider Meta Argument](https://www.terraform.io/docs/configuration/meta-arguments/resource-provider.html)
+- [Azure Provider - Argument and Attribute References](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
