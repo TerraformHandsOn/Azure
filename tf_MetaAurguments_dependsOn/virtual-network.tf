@@ -27,9 +27,10 @@ resource "azurerm_subnet" "mysubnet" {
 
 # Resource-4: Create Public IP Address
 resource "azurerm_public_ip" "mypublicip" {
-
-  depends_on = [
-    azurerm_virtual_network,azurerm_subnet
+  
+   depends_on = [
+    azurerm_virtual_network.myvnet,
+    azurerm_subnet.mysubnet
   ]
    name = "mypublic-1"
    resource_group_name = azurerm_resource_group.myrg.name
